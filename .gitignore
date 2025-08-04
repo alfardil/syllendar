@@ -7,6 +7,8 @@ yarn-error.log*
 # Next.js
 .next/
 out/
+frontend/.next/
+frontend/out/
 
 # Environment variables
 .env*
