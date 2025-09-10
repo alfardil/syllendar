@@ -3,3 +3,4 @@ openai
 aiohttp
 tiktoken
 dotenv
+python-multipart
