@@ -4,19 +4,36 @@ Routes to invoke our LLM and generate responses.
 "/test" tests our o4-mini implementation without streaming.
 "/stream-test" tests our o4-mini implementation with streaming.
 "/analyze-image" analyzes uploaded syllabus images and generates ICS files.
+"/analyze-pdf" analyzes uploaded PDF syllabi and extracts exam events.
+"/generate-ics" generates ICS calendar files from events data.
+"/generate-ics-selected" generates ICS calendar files from selected events only.
 
 """
 
 import base64
 import io
+import json
 import os
+import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+
+import PyPDF2
 from dotenv import load_dotenv
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import StreamingResponse, Response
 from openai import OpenAI
+
 from app.services.o4_mini_service import OpenAIo4Service
+from app.prompts import (
+    TEST_SYSTEM_PROMPT,
+    TEST_DATA,
+    SYLLABUS_ANALYSIS_SYSTEM_PROMPT,
+    SYLLABUS_ANALYSIS_USER_PROMPT,
+    PDF_EXAM_ANALYSIS_SYSTEM_PROMPT,
+    PDF_EXAM_ANALYSIS_USER_PROMPT,
+    CHAT_SYSTEM_PROMPT,
+)
 
 
 load_dotenv()
@@ -24,6 +41,29 @@ load_dotenv()
 router = APIRouter(prefix="/generate", tags=["OpenAI"])
 
 o4_service = OpenAIo4Service()
+
+
+def extract_text_from_pdf(pdf_data: bytes) -> str:
+    """
+    Extract text content from PDF bytes.
+
+    Args:
+        pdf_data: PDF file as bytes
+
+    Returns:
+        Extracted text content
+    """
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_data))
+        text = ""
+
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+
+        return text.strip()
+    except Exception as e:
+        print(f"Error extracting text from PDF: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
 
 
 def call_vision_api(system_prompt: str, user_prompt: str, image_base64: str) -> str:
@@ -75,11 +115,8 @@ def call_vision_api(system_prompt: str, user_prompt: str, image_base64: str) -> 
 async def test():
     """Test route for GPT implementation."""
 
-    system_prompt: str = """
-    You are a friendly chatbot. For now, simply return the data you recieve.
-    """
-
-    data: str = "This is the test endpoint for your o4 mini call."
+    system_prompt: str = TEST_SYSTEM_PROMPT
+    data: str = TEST_DATA
 
     return o4_service.call_o4_api(system_prompt, data)
 
@@ -88,11 +125,8 @@ async def test():
 async def stream_test():
     """Test route for GPT's streaming implementation."""
 
-    system_prompt: str = """
-    You are a friendly chatbot. For now, simply return the data you recieve.
-    """
-
-    data: str = "This is the test endpoint for your o4 mini call."
+    system_prompt: str = TEST_SYSTEM_PROMPT
+    data: str = TEST_DATA
 
     async def generate_stream():
         async for chunk in o4_service.call_o4_api_stream(system_prompt, data):
@@ -134,42 +168,10 @@ async def analyze_image(file: UploadFile = File(...)):
         image_base64 = base64.b64encode(image_data).decode("utf-8")
 
         # System prompt for syllabus analysis
-        system_prompt = """
-        You are an expert at analyzing images containing event schedules, course syllabi, and calendar information.
-        
-        IMPORTANT: You must analyze the ACTUAL content visible in the image. Do not make up or use placeholder data.
-        
-        Extract all event and schedule information from the image including:
-        - Event names/titles
-        - Dates and times
-        - Locations/venues
-        - Event descriptions
-        - Any recurring patterns
-        - Course or program names (if applicable)
-        
-        Return ONLY a valid JSON object with this exact structure (no additional text):
-        {
-            "course_name": "Actual name from image or 'Events' if no course name",
-            "course_code": "Actual code from image or 'EVENTS' if no code",
-            "events": [
-                {
-                    "title": "Exact event name from image",
-                    "start_time": "YYYY-MM-DDTHH:MM:SS format (use the timezone shown in image, convert ET to local time)",
-                    "end_time": "YYYY-MM-DDTHH:MM:SS format (use the timezone shown in image, convert ET to local time)", 
-                    "recurrence": "weekly/daily/once or empty string",
-                    "days": ["Monday", "Tuesday", etc. or empty array],
-                    "location": "Exact location from image or empty string",
-                    "description": "Event description from image or empty string"
-                }
-            ]
-        }
-        
-        Use the actual dates from the image. If you see September 2025, use September 2025.
-        Be precise and only include information actually visible in the image.
-        """
+        system_prompt = SYLLABUS_ANALYSIS_SYSTEM_PROMPT
 
         # Create the prompt with image for vision model
-        user_prompt = "Analyze this image and extract all event information. Look for event names, dates, times, locations, and any other schedule details. Return only the JSON format specified in the system prompt."
+        user_prompt = SYLLABUS_ANALYSIS_USER_PROMPT
 
         # Use vision model for image analysis
         ai_response = call_vision_api(system_prompt, user_prompt, image_base64)
@@ -178,8 +180,6 @@ async def analyze_image(file: UploadFile = File(...)):
 
         # Parse AI response (assuming it returns JSON)
         try:
-            import json
-            import re
 
             # Try to extract JSON from the response if it's wrapped in text
             json_match = re.search(r"\{.*\}", ai_response, re.DOTALL)
@@ -208,6 +208,69 @@ async def analyze_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
 
+@router.post("/analyze-pdf")
+async def analyze_pdf(file: UploadFile = File(...)):
+    """
+    Analyze uploaded PDF syllabus and extract exam events.
+
+    Args:
+        file: Uploaded PDF file
+
+    Returns:
+        Extracted exam events as JSON
+    """
+    try:
+        print(f"Received PDF file: {file.filename}, content_type: {file.content_type}")
+
+        # Validate file type
+        if not file.content_type or file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail="File must be a PDF")
+
+        # Read PDF data
+        pdf_data = await file.read()
+
+        # Extract text from PDF
+        pdf_text = extract_text_from_pdf(pdf_data)
+
+        if not pdf_text.strip():
+            raise HTTPException(status_code=400, detail="No text content found in PDF")
+
+        print(f"Extracted PDF text length: {len(pdf_text)} characters")
+
+        # Use o4 service to analyze the text
+        ai_response = o4_service.call_o4_api(PDF_EXAM_ANALYSIS_SYSTEM_PROMPT, pdf_text)
+
+        print(f"AI Response: {ai_response}")
+
+        # Parse AI response (assuming it returns JSON)
+        try:
+            # Try to extract JSON from the response if it's wrapped in text
+            json_match = re.search(r"\{.*\}", ai_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group()
+                exam_data = json.loads(json_str)
+            else:
+                exam_data = json.loads(ai_response)
+
+            print(f"Parsed exam data: {exam_data}")
+
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")
+            print(f"Raw AI response: {ai_response}")
+            # If AI doesn't return valid JSON, raise an error
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI returned invalid JSON format. Response: {ai_response[:200]}...",
+            )
+
+        # Return extracted events as JSON
+        return exam_data
+
+    except Exception as e:
+        print(f"Error processing PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+
+
 @router.post("/generate-ics")
 async def generate_ics_from_events(events_data: Dict[str, Any]):
     """
@@ -232,6 +295,52 @@ async def generate_ics_from_events(events_data: Dict[str, Any]):
 
     except Exception as e:
         print(f"Error generating ICS file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error generating ICS file: {str(e)}"
+        )
+
+
+@router.post("/generate-ics-selected")
+async def generate_ics_from_selected_events(selected_events_data: Dict[str, Any]):
+    """
+    Generate ICS calendar file from selected events only.
+
+    Args:
+        selected_events_data: Dictionary containing course info and selected events
+            {
+                "course_name": "Course Name",
+                "course_code": "COURSE-101",
+                "selected_events": [list of selected event objects]
+            }
+
+    Returns:
+        ICS file as response
+    """
+    try:
+        # Extract course info and selected events
+        course_name = selected_events_data.get("course_name", "Selected Events")
+        course_code = selected_events_data.get("course_code", "SELECTED")
+        selected_events = selected_events_data.get("selected_events", [])
+
+        # Create events data structure for ICS generation
+        events_data = {
+            "course_name": course_name,
+            "course_code": course_code,
+            "events": selected_events,
+        }
+
+        # Generate ICS file
+        ics_content = generate_ics_file(events_data)
+
+        # Return ICS file
+        return Response(
+            content=ics_content,
+            media_type="text/calendar",
+            headers={"Content-Disposition": "attachment; filename=selected_events.ics"},
+        )
+
+    except Exception as e:
+        print(f"Error generating ICS file from selected events: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Error generating ICS file: {str(e)}"
         )
@@ -322,3 +431,45 @@ def generate_ics_file(schedule_data: Dict[str, Any]) -> str:
     ics_content.append("END:VCALENDAR")
 
     return "\r\n".join(ics_content)
+
+
+@router.post("/chat")
+async def chat_with_assistant(
+    message: str = Form(...), conversation_history: str = Form(None)
+):
+    """
+    Chat with the AI assistant for schedule management.
+    """
+    try:
+        # Build the conversation context
+        conversation_context = ""
+        if conversation_history:
+            try:
+                history = json.loads(conversation_history)
+                for msg in history:
+                    role = "User" if msg.get("isUser", False) else "Assistant"
+                    conversation_context += f"{role}: {msg.get('text', '')}\n"
+            except json.JSONDecodeError:
+                # If history is malformed, ignore it
+                pass
+
+        # Add current message
+        conversation_context += f"User: {message}\n"
+
+        # Call the AI service with the chat prompt and conversation context
+        response = o4_service.call_o4_api(
+            system_prompt=CHAT_SYSTEM_PROMPT, data=conversation_context
+        )
+
+        # Parse the JSON response
+        try:
+            parsed_response = json.loads(response)
+            return parsed_response
+        except json.JSONDecodeError:
+            # If it's not valid JSON, return as a chat response
+            return {"action": "chat", "response": response}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error processing chat message: {str(e)}"
+        )

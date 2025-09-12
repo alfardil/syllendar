@@ -4,3 +4,4 @@ aiohttp
 tiktoken
 dotenv
 python-multipart
+PyPDF2
