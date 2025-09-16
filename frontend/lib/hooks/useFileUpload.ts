@@ -14,6 +14,7 @@ export function useFileUpload() {
 
   const {
     analyzeFile,
+    analyzePdfWithStream,
     isAnalyzing,
     error: analysisError,
     reset: resetAnalysis,
@@ -66,7 +67,27 @@ export function useFileUpload() {
     resetAnalysis();
 
     try {
-      const eventsData = await analyzeFile(selectedFile);
+      let eventsData: ExtractedEvents;
+
+      if (fileType === "pdf") {
+        // Use streaming for PDF analysis
+        eventsData = await analyzePdfWithStream(
+          selectedFile,
+          (status, message) => {
+            if (status === "analyzing") {
+              setUploadStatus(message || "Analyzing PDF content...");
+            }
+          },
+          (chunk) => {
+            // Optionally show streaming progress
+            // setUploadStatus(`Analyzing... (${chunk.length} characters processed)`);
+          }
+        );
+      } else {
+        // Use regular analysis for images
+        eventsData = await analyzeFile(selectedFile);
+      }
+
       setExtractedEvents(eventsData);
       setUploadStatus(
         `✅ ${fileType.toUpperCase()} analyzed successfully! Review and select the events below.`

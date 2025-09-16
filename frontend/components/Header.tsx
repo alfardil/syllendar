@@ -1,3 +1,4 @@
+"use client";
 export default function Header() {
   return (
     <div className="text-center mb-12">

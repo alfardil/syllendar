@@ -1,7 +1,9 @@
 fastapi
+uvicorn
 openai
 aiohttp
 tiktoken
 dotenv
 python-multipart
 PyPDF2
+slowapi

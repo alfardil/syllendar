@@ -1,26 +1,79 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(92.13% 0.0388 282.36);
+  --secondary-background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --main-foreground: oklch(0% 0 0);
+  --main: oklch(66.34% 0.1806 277.2);
+  --border: oklch(0% 0 0);
+  --ring: oklch(0% 0 0);
+  --overlay: oklch(0% 0 0 / 0.8);
+  --shadow: 2px 2px 0px 0px var(--border);
+  --chart-1: #7a83ff;
+  --chart-2: #facc00;
+  --chart-3: #ff4d50;
+  --chart-4: #00d696;
+  --chart-5: #0099ff;
+  --chart-active-dot: #000;
+}
+
+.dark {
+  --background: oklch(26.58% 0.0737 283.96);
+  --secondary-background: oklch(23.93% 0 0);
+  --foreground: oklch(92.49% 0 0);
+  --main-foreground: oklch(0% 0 0);
+  --main: oklch(66.34% 0.1806 277.2);
+  --border: oklch(0% 0 0);
+  --ring: oklch(100% 0 0);
+  --shadow: 2px 2px 0px 0px var(--border);
+  --chart-1: #7a83ff;
+  --chart-2: #e0b700;
+  --chart-3: #ff6669;
+  --chart-4: #00bd84;
+  --chart-5: #008ae5;
+  --chart-active-dot: #fff;
 }
 
 @theme inline {
+  --color-main: var(--main);
   --color-background: var(--background);
+  --color-secondary-background: var(--secondary-background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-main-foreground: var(--main-foreground);
+  --color-border: var(--border);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --spacing-boxShadowX: 2px;
+  --spacing-boxShadowY: 2px;
+  --spacing-reverseBoxShadowX: -2px;
+  --spacing-reverseBoxShadowY: -2px;
+  --radius-base: 5px;
+  --shadow-shadow: var(--shadow);
+  --font-weight-base: 500;
+  --font-weight-heading: 700;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply text-foreground font-base bg-background;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
 }

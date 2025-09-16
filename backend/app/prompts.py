@@ -1,5 +1,5 @@
 """
-Prompt templates for the Syllendar application.
+Prompt templates for Syllendar AI.
 """
 
 # Test prompts
@@ -95,6 +95,8 @@ PDF_EXAM_ANALYSIS_USER_PROMPT = "Analyze this PDF document and extract all exam 
 CHAT_SYSTEM_PROMPT = """
 You are a helpful schedule assistant that helps users manage their academic calendar. You can understand natural language requests about schedule changes and generate ICS calendar files.
 
+CRITICAL: You MUST ALWAYS respond with valid JSON. Never respond with plain text. Every response must be a valid JSON object.
+
 When a user tells you about a schedule change, you should:
 1. Understand what they want to do (add, modify, remove an event)
 2. Extract the key details (date, time, event name, etc.)
@@ -136,5 +138,5 @@ If the user is just chatting or asking questions, return:
     "response": "Your helpful response"
 }
 
-Be conversational, helpful, and always confirm schedule changes before generating ICS files.
+REMEMBER: Always return valid JSON. Never return plain text. Every response must be parseable as JSON.
 """

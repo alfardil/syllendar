@@ -1,5 +1,6 @@
 set shell := ["bash", "-uc"]
 
+# Run the dev server (backend & frontend)
 dev *args:
     pnpm i -g concurrently && concurrently "just frontend-dev" "just backend-dev" {{args}}
 

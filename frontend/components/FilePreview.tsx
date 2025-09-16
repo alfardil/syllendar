@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface FilePreviewProps {
   file: File;
@@ -57,9 +58,11 @@ export default function FilePreview({
             </div>
           </div>
         )}
-        <button
+        <Button
           onClick={onClear}
-          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+          size="icon"
+          className="absolute top-2 right-2 rounded-full"
+          aria-label="Clear file"
         >
           <svg
             className="w-4 h-4"
@@ -74,7 +77,7 @@ export default function FilePreview({
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+        </Button>
       </div>
 
       <div className="text-center">
@@ -82,11 +85,7 @@ export default function FilePreview({
           Selected: {file.name}
         </p>
 
-        <button
-          onClick={onUpload}
-          disabled={isUploading}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-medium py-3 px-8 rounded-lg transition-colors"
-        >
+        <Button onClick={onUpload} disabled={isUploading}>
           {isUploading ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -95,7 +94,7 @@ export default function FilePreview({
           ) : (
             `Analyze ${fileType?.toUpperCase()}`
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

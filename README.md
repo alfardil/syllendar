@@ -1,66 +1,35 @@
-# Syllendar 📅
+# Syllendar
 
-A modern student planning app that helps you manage your academic life with style.
+### Set up
 
-## Features
+For most optimal setup, follow these directions:
 
-- **Upload Syllabus**: Upload and review course information
-- **Calendar Integration**: Sync important dates to your calendar
-- **Grade Tracking**: Monitor your academic progress
-- **Study Resources**: Get personalized study recommendations
-- **Modern UI**: Neobrutalism design that's fun and functional
-
-## Tech Stack
-
-- **Frontend**: Next.js 14, React, TypeScript
-- **Styling**: Tailwind CSS with Neobrutalism components
-- **UI Components**: Shadcn UI
-- **Authentication**: NextAuth.js with Google OAuth
-- **Icons**: Lucide React
-
-## Getting Started
-
-1. **Install dependencies**:
-
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Set up environment variables**:
-
-   ```bash
-   cp .env.example .env.local
-   # Add your Google OAuth credentials
-   ```
-
-3. **Run the development server**:
-
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser**:
-   Navigate to `http://localhost:3000`
-
-## Project Structure
-
-```
-frontend/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable UI components
-├── lib/                # Utilities and API client
-└── public/             # Static assets
+```zsh
+brew install just
 ```
 
-## Pages
+We just our `Justfile` to run scripts to run the frontend and backend.
 
-- `/` - Landing page
-- `/upload` - Upload syllabus
-- `/review` - Review extracted events
-- `/calendar` - Sync to calendar
-- `/grades` - Track grades
-- `/resources` - Study resources
-- `/dashboard` - User dashboard
+It's good practice to set up your <b> python virtual environment </b> for the backend.
 
-Built with ❤️ for students
+After creating your venv, you can run the app.
+
+### Running the app
+
+To run the entire app locally:
+
+```zsh
+just dev
+```
+
+To run the <b> backend </b> locally:
+
+```zsh
+just backend-dev
+```
+
+To run the <b> frontend </b> locally:
+
+```zsh
+just frontend-dev
+```

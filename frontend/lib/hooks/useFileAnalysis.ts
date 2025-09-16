@@ -26,8 +26,32 @@ export const useFileAnalysis = () => {
     }
   };
 
+  const analyzePdfWithStream = async (
+    file: File,
+    onStatus?: (status: string, message?: string) => void,
+    onProgress?: (chunk: string) => void
+  ): Promise<ExtractedEvents> => {
+    try {
+      for await (const result of api.analyzePdfStream(
+        file,
+        onStatus,
+        onProgress
+      )) {
+        if (result.status === "complete" && result.data) {
+          return result.data;
+        }
+      }
+      throw new Error("No data received from streaming analysis");
+    } catch (error) {
+      console.error("PDF streaming analysis error:", error);
+      // Fallback to regular PDF analysis
+      return analyzePdfMutation.mutateAsync(file);
+    }
+  };
+
   return {
     analyzeFile,
+    analyzePdfWithStream,
     isAnalyzing: analyzeImageMutation.isPending || analyzePdfMutation.isPending,
     error: analyzeImageMutation.error || analyzePdfMutation.error,
     reset: () => {
