@@ -23,7 +23,18 @@ export function useChatBot() {
       timestamp: new Date(),
     },
   ]);
-  const [pendingIcsData, setPendingIcsData] = useState<any>(null);
+  const [pendingIcsData, setPendingIcsData] = useState<{
+    course_name: string;
+    course_code: string;
+    events: Array<{
+      title: string;
+      start_time: string;
+      end_time: string;
+      location?: string;
+      description?: string;
+      event_type?: string;
+    }>;
+  } | null>(null);
 
   const {
     generateIcs,

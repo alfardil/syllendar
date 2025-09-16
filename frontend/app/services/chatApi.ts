@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "http://localhost:8000";
 
 export interface ChatResponse {
   action: "chat" | "generate_ics";
@@ -61,7 +64,7 @@ export async function* sendChatMessageStream(
     timestamp: Date;
   }>
 ): AsyncGenerator<
-  { chunk?: string; ics_data?: any; done?: boolean },
+  { chunk?: string; ics_data?: ChatResponse["ics_data"]; done?: boolean },
   void,
   unknown
 > {
@@ -113,7 +116,7 @@ export async function* sendChatMessageStream(
               } else if (data.done) {
                 return;
               }
-            } catch (e) {
+            } catch {
               console.warn("Failed to parse SSE data:", line);
             }
           }

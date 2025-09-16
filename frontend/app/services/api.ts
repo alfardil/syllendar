@@ -1,4 +1,7 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "http://localhost:8000";
 
 export interface Event {
   title: string;
@@ -116,7 +119,7 @@ export const api = {
               } else if (data.status === "error") {
                 throw new Error(data.message);
               }
-            } catch (e) {
+            } catch {
               console.warn("Failed to parse SSE data:", line);
             }
           }

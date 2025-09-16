@@ -78,7 +78,7 @@ export function useFileUpload() {
               setUploadStatus(message || "Analyzing PDF content...");
             }
           },
-          (chunk) => {
+          () => {
             // Optionally show streaming progress
             // setUploadStatus(`Analyzing... (${chunk.length} characters processed)`);
           }

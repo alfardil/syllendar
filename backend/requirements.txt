@@ -2,6 +2,8 @@ fastapi
 uvicorn
 openai
 aiohttp
+uvloop
+httptools
 tiktoken
 dotenv
 python-multipart

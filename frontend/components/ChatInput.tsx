@@ -66,8 +66,8 @@ export default function ChatInput({ isGenerating, onSend }: ChatInputProps) {
         </Button>
       </div>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        Example: "Change my Tuesday class from 2pm to 3pm" or "Add a study
-        session on Friday at 6pm"
+        Example: &quot;Change my Tuesday class from 2pm to 3pm&quot; or
+        &quot;Add a study session on Friday at 6pm&quot;
       </p>
     </div>
   );

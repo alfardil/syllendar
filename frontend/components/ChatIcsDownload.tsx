@@ -2,7 +2,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 interface ChatIcsDownloadProps {
-  pendingIcsData: any;
+  pendingIcsData: {
+    course_name: string;
+    course_code: string;
+    events: Array<{
+      title: string;
+      start_time: string;
+      end_time: string;
+      location?: string;
+      description?: string;
+      event_type?: string;
+    }>;
+  } | null;
   isGenerating: boolean;
   onDownload: () => Promise<void> | void;
 }
